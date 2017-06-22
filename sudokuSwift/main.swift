@@ -32,4 +32,3 @@ if answer.solved {
 else {
     print("unsolved!")
 }
-print("Hello, Sudoku World!")

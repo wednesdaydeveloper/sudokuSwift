@@ -65,7 +65,7 @@ class Solver {
         [6, 6, 6, 7, 7, 7, 8, 8, 8],
         [6, 6, 6, 7, 7, 7, 8, 8, 8],
         [6, 6, 6, 7, 7, 7, 8, 8, 8],
-        ]
+    ]
     
     init(input: [[Int]]) {
         var initialCell = [SolvedCell]();
@@ -79,16 +79,23 @@ class Solver {
                 }
             }
         }
+
         InitialCell = initialCell
+    }
+    
+    func foreachCell(iterator: (Int, Int) -> Void) -> Void {
+        for row in 0..<Solver.Size {
+            for col in 0..<Solver.Size {
+                iterator(row, col)
+            }
+        }
     }
     
     func answerArray(results: [SolvedCell]) -> [[Int]] {
         var answer = [[Int]](repeating: [Int](repeating: 0, count: Solver.Size), count: Solver.Size)
-        for row in 0..<Solver.Size {
-            for col in 0..<Solver.Size {
-                if let result = results.filter({ r in r.row == row && r.col == col}).first {
-                    answer[row][col] = result.val
-                }
+        foreachCell { (row, col) in
+            if let result = results.filter({ r in r.row == row && r.col == col}).first {
+                answer[row][col] = result.val
             }
         }
         return answer
@@ -103,27 +110,30 @@ class Solver {
         return Set(1...9).subtracting(Set(usedValues))
     }
     
+    //  バックトラッキング法を用いて、数独を再起的に解く。
     func solve(results: [SolvedCell] = []) -> Result {
         let solvedCells = InitialCell + results
         var unsolvedCells = [UnsolvedCell]();
         
-        for row in 0..<Solver.Size {
-            for col in 0..<Solver.Size {
-                if solvedCells.filter({cell in cell.row == row && cell.col == col}).first == nil
-                {
-                    let unused = unusedValues(currentCell: Cell(row: row, col: col), solvedCells: solvedCells)
-                    unsolvedCells.append(UnsolvedCell(row: row, col: col, unused: unused))
-                }
+        //  まだ入力されていないセルの情報を生成。
+        foreachCell { (row, col) in
+            if solvedCells.filter({cell in cell.row == row && cell.col == col}).isEmpty
+            {
+                let unused = unusedValues(currentCell: Cell(row: row, col: col), solvedCells: solvedCells)
+                unsolvedCells.append(UnsolvedCell(row: row, col: col, unused: unused))
             }
         }
-        
+
         if unsolvedCells.count == 0 {
+            //  全てのセルが埋まったら終了。
             return Result(solved: true, array: answerArray(results: solvedCells))
         }
         else {
-            if unsolvedCells.map({cell in cell.unused.count > 0}).reduce(true, {(b1, b2) in b1 && b2 }) {
-                let head: UnsolvedCell = unsolvedCells.reduce(unsolvedCells.first!, {(b1, b2) in b1.unused.count < b2.unused.count ? b1 : b2})
-                
+            //  unused の長さが０のセルが存在しない？
+            if unsolvedCells.filter({cell in cell.unused.isEmpty}).isEmpty {
+                //  unused の長さが最小のものを求める。
+                let head = unsolvedCells.reduce(unsolvedCells.first!, {(b1, b2) in b1.unused.count < b2.unused.count ? b1 : b2})
+                //  未使用の数値を１つずつ空いているセルに埋めて、矛盾が見つかるまでそれを再起的に繰り返す。
                 let answers = head.unused.map({val in solve(results: results + [SolvedCell(row: head.row, col: head.col, blk: Solver.SubBlockMask[head.row][head.col], val: val)])})
                     .filter({result in result.solved})
                 
