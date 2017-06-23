@@ -19,12 +19,11 @@ var array = [
     [0, 9, 0, 0, 0, 0, 0, 0, 0,],
     [4, 0, 0, 0, 0, 0, 0, 6, 0,],
 ]
-let solver = Solver(input: array)
-var answer = solver.solve()
-if answer.solved {
+if let answer = Solver(input: array).solve() {
+    let array = answer.array
     for row in 0..<Solver.Size {
         for col in 0..<Solver.Size {
-            print(answer.array[row][col], terminator: "")
+            print(array[row][col], terminator: "")
         }
         print()
     }
